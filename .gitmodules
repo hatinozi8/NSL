@@ -1,0 +1,3 @@
+[submodule "FPGA_tools"]
+	path = FPGA_tools
+	url = https://github.com/hatinozi8/FPGA_tools.git
