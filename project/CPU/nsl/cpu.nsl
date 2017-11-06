@@ -1,0 +1,91 @@
+#define	ADDR_WIDTH 16
+#define WORD_WIDTH 16
+#define MEM_WIDTH 65536
+
+#define ARI 2'b01
+#define JP  2'b10
+#define STR 2'b11
+#define HLT 16'b0
+
+declare alu{
+	input	A[WORD_WIDTH];
+	input	B[WORD_WIDTH];
+	input	Fn[4];
+	output	Q[WORD_WIDTH];
+	output	z;
+
+	func_in	exe( A, B, Fn );
+}
+module alu{
+	wire res[WORD_WIDTH], c;
+	func exe{
+		any{
+			Fn == 0x0:	res = 0;
+			Fn == 0x1:	res = A;
+			Fn == 0x2:	res = B;
+			Fn == 0x3:	res = ~A;
+			Fn == 0x4:	res = ~B;
+			Fn == 0x5:	res = A & B;
+			Fn == 0x6:	res = A | B;
+			Fn == 0x7:	res = A ^ B;
+			Fn == 0x8:	.{c,res} = A + B;
+			Fn == 0x9:	.{c,res} = A - B;
+			Fn == 0xF:	res = 0;
+			else:		res = 0;
+		}
+		Q = res;
+		z = (!res) | ~c;
+	}
+}
+
+declare cpu{
+	input	start;
+	output	addr[ADDR_WIDTH];
+	output	datao[WORD_WIDTH];
+	input	datai[WORD_WIDTH];
+
+	func_out	memwrite( addr, datao );
+	func_out	memread( addr ):datai;
+}
+
+module cpu{
+	reg pc[ADDR_WIDTH] = 0, op[WORD_WIDTH], im[WORD_WIDTH], a[WORD_WIDTH], z;
+
+	alu alu_i;
+
+	proc_name ifetch(pc);
+	proc_name decode(pc,op);
+	proc_name extend(im);
+	proc_name exec(im);
+
+	if(~ifetch & ~decode & ~extend & ~exec ){
+		if(start) ifetch(0);
+	}
+
+	proc ifetch{
+		decode( pc, memread(pc) );
+	}
+
+	proc decode{
+		if( op == HLT )		finish();
+		else if( op[15] )	extend( memread(pc) );
+		else				exec( memread(pc) );
+	}
+
+	proc extend{
+		exec( memread(im) );
+	}
+
+	proc exec{
+		alu_i.exe( a, im, op[3:0] );
+
+		if( op[13:12] == ARI ){
+			a := alu_i.Q;  z := alu_i.z;
+		}
+
+		if( op[13:12] == STR )	memwrite( im, a );
+
+		if( op[13:12] == JP & ( ~op[8] | z ) ) ifetch( alu_i.Q );
+		else ifetch(pc+1);
+	}
+}
