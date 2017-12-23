@@ -1,0 +1,83 @@
+#include "i2s.inc"
+
+declare i2s_sim simulation {}
+
+module i2s_sim {
+
+	i2s i2s_i;
+	reg pc[20]=0;
+
+	reg count[4] =0;
+	mem data_list[10][DATA_BIT*2] ={
+		32'hFFFF0000,
+		32'hEEEE1111,
+		32'hDDDD2222,
+		32'hCCCC3333,
+		32'hBBBB4444,
+		32'hAAAA5555,
+		32'h99996666,
+		32'h88887777,
+		32'h77778888,
+		32'h66669999,
+		32'h5555AAAA};
+
+	reg loopL[5]=0;
+	reg loopR[5]=0;
+
+	reg dataL[DATA_BIT];
+	reg dataR[DATA_BIT];
+
+	reg data_o=0;
+
+	reg start = 0;
+
+	proc_name L(dataL,loopL);
+	proc_name R(dataR,loopR);
+	func_self NEXT();
+
+	i2s_i.m_clock = ~m_clock;
+
+	pc++;
+
+	if(pc == 5){
+		NEXT();
+		start:=1;
+		_display("aa");
+	}
+
+	if(pc == 10000){
+		_finish("10000");
+	}
+
+	i2s_i.LRCLK = ( NEXT | R );
+	i2s_i.DATA = data_o;
+
+	func NEXT {
+		if(count < 10){
+			L(data_list[count][31:16],15);
+			count++;
+		}else{
+			_finish();
+		}
+	}
+
+	proc L{
+		//i2s_i.DATA = dataL[0];
+		data_o := dataL[0];
+		dataL := {dataL[0],dataL[15:1]};
+		loopL--;
+		if(loopL==0) R(data_list[count][15:0], 15);
+	}
+
+	proc R{
+		//i2s_i.DATA = dataR[0];
+		data_o := dataR[0];
+		dataR := {dataR[0],dataR[15:1]};
+		loopR--;
+		if(loopR==0){
+			//NEXT();
+			finish;
+		}
+	}
+
+}

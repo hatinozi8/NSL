@@ -1,0 +1,28 @@
+[*]
+[*] GTKWave Analyzer v3.3.62 (w)1999-2014 BSI
+[*] Wed Nov 22 11:55:29 2017
+[*]
+[dumpfile] "/opt/tmp/work/git/github/NSL/project/DAC/debug/DAC.vcd"
+[dumpfile_mtime] "Wed Nov 22 11:50:20 2017"
+[dumpfile_size] 98254464
+[savefile] "/opt/tmp/work/git/github/NSL/project/DAC/wave.gtkw"
+[timestart] 0
+[size] 1920 937
+[pos] -1 -1
+*-27.184147 1049800000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 210
+[signals_width] 126
+[sst_expanded] 1
+[sst_vpaned_height] 273
+@88028
+SystemC_AMS.dac_out_lpf
+@20000
+-
+-
+@88029
+SystemC_AMS.dac_out_lpf2
+@20000
+-
+-
+[pattern_trace] 1
+[pattern_trace] 0

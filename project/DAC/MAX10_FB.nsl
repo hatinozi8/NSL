@@ -1,0 +1,20 @@
+#include "DAC.inc"
+
+declare MAX10_FB{
+	output GPIO[2];
+}
+
+module MAX10_FB{
+
+	reg count=1;
+
+	DAC dac_i;
+
+	if(count){
+		count:=0;
+		dac_i.set_data(16'h7FFF);
+	}
+
+	GPIO={1'b0, dac_i.vo};
+}
+

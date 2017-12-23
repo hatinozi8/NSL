@@ -1,0 +1,35 @@
+
+#include "DAC.inc"
+
+module DAC{
+	reg vi[N]=0;
+	reg vc[N]=0;
+
+	wire vt[N+1];
+
+	wire vref[N-RC];
+
+	vo = vref[N-RC-1];
+
+	if( vc < vi ){
+		vref = N-RC#(1'b1);
+	}else{
+		vref = 0;
+	}
+
+	vt = vc + vref - vc[N-1:RC];
+
+	vc := vt[N-1:0];
+
+/*
+	if(vt[N]){
+		vc := N#(1'b1);
+	}else{
+		vc := vt[N-1:0];
+	}
+*/
+
+	func set_data{
+		vi:=datai;
+	}
+}
