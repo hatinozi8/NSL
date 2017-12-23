@@ -1,0 +1,13 @@
+
+#include "DAC_TOP.inc"
+#include "i2s.inc"
+#include "DAC.inc"
+
+module DAC_TOP{
+
+	i2s i2s_i;
+	DAC dac_i;
+
+
+	
+}

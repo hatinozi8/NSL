@@ -75,7 +75,7 @@ module i2s_sim {
 		dataR := {dataR[0],dataR[15:1]};
 		loopR--;
 		if(loopR==0){
-			//NEXT();
+			NEXT();
 			finish;
 		}
 	}

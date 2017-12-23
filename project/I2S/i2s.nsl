@@ -3,7 +3,7 @@
 
 module i2s{
 	
-	reg prev_LRCLK0,prev_LRCLK1;
+	reg prev_LRCLK0;
 	reg dataR[DATA_BIT];
 	reg dataL[DATA_BIT];
 
@@ -12,13 +12,9 @@ module i2s{
 
 
 	prev_LRCLK0 := LRCLK;
-	prev_LRCLK1 := prev_LRCLK0;
 
-
-	reset_R= ~prev_LRCLK1 & prev_LRCLK0;
-	reset_L= prev_LRCLK1 & ~prev_LRCLK0;
-	//reset_R= ~prev_LRCLK0 & LRCLK;
-	//reset_L= prev_LRCLK0 & ~LRCLK;
+	reset_L = prev_LRCLK0 & ~LRCLK;
+	reset_R = ~prev_LRCLK0 & LRCLK;
 
 	if(reset_R) dataR:=0;
 	if(reset_L) dataL:=0;
@@ -30,11 +26,11 @@ module i2s{
 	Rout = reset_L;
 
 
-	if( ~reset_R & ~reset_L & ~prev_LRCLK1 ){
+	if( reset_R | (~reset_L & ~LRCLK) ){
 		dataL := { dataL[DATA_BIT-2:0], DATA}; 
 	}
 
-	if( ~reset_R & ~reset_L & prev_LRCLK1 ){
+	if( reset_L | (~reset_R & LRCLK) ){
 		dataR := { dataR[DATA_BIT-2:0], DATA}; 
 	}
 }
