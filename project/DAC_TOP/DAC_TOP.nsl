@@ -3,11 +3,30 @@
 #include "i2s.inc"
 #include "DAC.inc"
 
+
+
 module DAC_TOP{
 
 	i2s i2s_i;
-	DAC dac_i;
+	DAC dac_R, dac_L;
 
+	reg sync_L0,sync_L1,sync_L2;
+	reg sync_R0,sync_R1,sync_R2;
 
-	
+	i2s_i.LRCLK = LRCLK;
+	i2s_i.DATA = DATA;
+	i2s_i.m_clock = BCLK;
+
+	V_OUT_R = dac_R.vo;
+	V_OUT_L = dac_L.vo;
+
+	{sync_L2:=sync_L1; sync_L1:=sync_L0; sync_L0 := i2s_i.Lout;}
+	{sync_R2:=sync_R1; sync_R1:=sync_R0; sync_R0 := i2s_i.Rout;}
+
+	if( ~sync_L2 & sync_L1 ){
+		dac_L.set_data( i2s_i.Ldata );
+	}
+	if( ~sync_R2 & sync_R1 ){
+		dac_R.set_data( i2s_i.Rdata );
+	}
 }

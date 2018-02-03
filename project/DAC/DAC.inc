@@ -1,5 +1,5 @@
 
-#define N 32
+#define N 16
 //#define RC 5
 #define RC 6
 
