@@ -1,0 +1,35 @@
+
+#include "OVS.inc"
+
+module OVS{
+
+	BUF reg buf_i[BUF_SIZE];
+	BUF reg out_t;
+	integer i;
+
+
+	func_self set_out();
+
+	func push{
+		buf_i[0].R := Rin;
+		buf_i[0].L := Lin;
+		generate( i=1 ; i<BUF_SIZE ; i++ ){
+			buf_i[i] := buf_i[i-1];
+		}
+		
+		set_out();
+
+		pop(out_t.R,out_t.L);
+	}
+	
+	func set_out{
+		if( buf_i[BUF_CENTER].R != 0 ){
+			out_t.R := buf_i[BUF_CENTER].R;
+		}
+		if( buf_i[BUF_CENTER].L != 0 ){
+			out_t.L := buf_i[BUF_CENTER].L;
+		}
+	}
+
+}
+

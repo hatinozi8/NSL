@@ -32,4 +32,5 @@ module DAC{
 	func set_data{
 		vi:=datai;
 	}
+	//vi:=datai;
 }

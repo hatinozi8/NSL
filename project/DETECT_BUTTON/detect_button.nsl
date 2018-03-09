@@ -1,0 +1,63 @@
+/*
+#define NUM 5
+#define MAX_NUM 16
+#define MAX_WIDTH 4
+
+declare detect_button {
+	input	BT[NUM];
+	output	RANK_OUT[MAX_WIDTH*NUM];
+	func_in reset();
+}
+struct RANK{
+	rank[MAX_WIDTH];
+};
+*/
+
+#include "detect_button.inc"
+
+
+module detect_button{
+
+	reg sync0_bt[NUM] = 0;
+	reg sync1_bt[NUM] = 0;
+	reg sync2_bt[NUM] = 0;
+	wire bt_edge[NUM];
+
+	reg count[MAX_WIDTH] = 1;
+	RANK reg rank[NUM];
+
+	integer i;
+	variable rank_tmp[MAX_WIDTH*NUM];
+	variable flag_tmp[NUM];
+
+	wire flag[NUM];
+	
+	{sync2_bt := sync1_bt; sync1_bt := sync0_bt; sync0_bt := BT;}
+
+	bt_edge = (sync2_bt ^ sync1_bt) & (~sync2_bt); //posedge
+
+	generate( i = 0 ; i < NUM ; i++ ){
+		if( bt_edge[i] && (!rank[i].rank) ){
+			flag_tmp[i] = 1;
+			rank[i].rank := count;
+		}else{
+			flag_tmp[i] =0;
+		}
+	}
+	flag = flag_tmp;
+
+	if( flag ){count++;}
+
+	generate( i = 0 ; i < NUM ; i++ ){
+		rank_tmp[i*MAX_WIDTH+MAX_WIDTH-1:i*MAX_WIDTH] = rank[i].rank;
+	}
+
+	RANK_OUT = rank_tmp;
+
+	func reset{
+		generate( i = 0 ; i < NUM ; i++ ){
+			rank[i].rank := 0;
+		}
+		count:=1;
+	}
+}

@@ -7,6 +7,9 @@ module i2s{
 	reg dataR[DATA_BIT];
 	reg dataL[DATA_BIT];
 
+	reg reset_R_out;
+	reg reset_L_out;
+
 	wire reset_R;
 	wire reset_L;
 
@@ -22,8 +25,11 @@ module i2s{
 	Ldata = dataL;
 	Rdata = dataR;
 
-	Lout = reset_R;
-	Rout = reset_L;
+	reset_R_out := reset_R;
+	reset_L_out := reset_L;
+
+	Lout = reset_R_out;
+	Rout = reset_L_out;
 
 
 	if( reset_R | (~reset_L & ~LRCLK) ){

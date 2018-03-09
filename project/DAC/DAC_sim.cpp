@@ -20,7 +20,7 @@ int sc_main(int argn,char* argc[]){
 	
 	sc_clock m_clock("m_clock",20833,SC_PS);
 	sc_signal<bool> p_reset;
-	sc_signal<sc_uint<32> > datai;
+	sc_signal<sc_uint<16> > datai;
 	sc_signal<sc_uint<1> > set_data;
 
 	sc_signal<sc_uint<1> > dac_out;
@@ -66,31 +66,39 @@ int sc_main(int argn,char* argc[]){
 
 
 	//run
+
+
 	p_reset=0;
-	datai=0x3FFFFFFF;
+	datai=0x3FFF;
 	sc_start(30.0,SC_NS);
 	p_reset=1;
 	sc_start(10,SC_US);
-	datai=0x7FFFFFFF;
+	for(int i = 0 ; i < 0xFF00 ; i +=0x100 ){
+		datai = i & 0xFFFF;
+		sc_start(10,SC_US);
+	}
+		
 	sc_start(10,SC_US);
-	datai=0xFFFFFFFF;
+	datai=0x7FFF;
+	sc_start(10,SC_US);
+	datai=0x1FFF;
 	sc_start(10,SC_US);
 	datai=0xFFFF;
 
 	sc_start(23,SC_US);
-	datai=0xFFFFFFFF;
+	datai=0xCFFF;
 	sc_start(23,SC_US);
 	datai=0;
 	sc_start(23,SC_US);
-	datai=0xFFFFFFFF;
+	datai=0xFFFF;
 	sc_start(23,SC_US);
 	datai=0;
 	sc_start(23,SC_US);
-	datai=0xFFFFFFFF;
+	datai=0xFFFF;
 	sc_start(23,SC_US);
 	datai=0;
 	
-	sc_start(1.0,SC_MS);
+	//sc_start(1.0,SC_MS);
 
 
 	sca_close_vcd_trace_file(tfp);

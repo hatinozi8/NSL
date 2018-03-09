@@ -1,17 +1,27 @@
+#define OVS_ENABLE 
 
 #include "DAC_TOP.inc"
 #include "i2s.inc"
 #include "DAC.inc"
 
+#ifdef OVS_ENABLE
+#include "OVS.inc"
+#endif
 
 
 module DAC_TOP{
 
 	i2s i2s_i;
 	DAC dac_R, dac_L;
+#ifdef OVS_ENABLE
+	OVS ovs_i;
+#endif
 
 	reg sync_L0,sync_L1,sync_L2;
 	reg sync_R0,sync_R1,sync_R2;
+	reg sync_B0,sync_B1,sync_B2;
+
+	reg Ltmp[N];
 
 	i2s_i.LRCLK = LRCLK;
 	i2s_i.DATA = DATA;
@@ -22,11 +32,31 @@ module DAC_TOP{
 
 	{sync_L2:=sync_L1; sync_L1:=sync_L0; sync_L0 := i2s_i.Lout;}
 	{sync_R2:=sync_R1; sync_R1:=sync_R0; sync_R0 := i2s_i.Rout;}
+	{sync_B2:=sync_B1; sync_B1:=sync_B0; sync_B0 := BCLK;}
+
+	if( ~sync_B2 & sync_B1 & ~(~sync_R2 & sync_R1) ){
+		ovs_i.push( 16'b0, 16'b0 );
+	}
 
 	if( ~sync_L2 & sync_L1 ){
-		dac_L.set_data( i2s_i.Ldata );
+		Ltmp := i2s_i.Ldata;
+		//dac_R.set_data( 16'b0 );
+		//dac_L.set_data( 16'b0 );
 	}
+
 	if( ~sync_R2 & sync_R1 ){
+#ifdef OVS_ENABLE
+		ovs_i.push( i2s_i.Rdata, Ltmp );
+#else
 		dac_R.set_data( i2s_i.Rdata );
+		dac_L.set_data( Ltmp );
+#endif
 	}
+
+#ifdef OVS_ENABLE
+	func ovs_i.pop{
+		dac_R.set_data( ovs_i.Rout );
+		dac_L.set_data( ovs_i.Lout );
+	}
+#endif
 }

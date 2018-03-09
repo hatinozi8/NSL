@@ -1,0 +1,68 @@
+#include "detect_button.inc"
+#include "HEX.inc"
+
+
+declare DE0_CV{
+	input	SW[10];
+	input	KEY[4];
+	input	GPIO_0[10];
+	output	GPIO_0_11;
+	input	GPIO_1[10];
+	output	GPIO_1_11;
+	output	HEX0[7];
+	output	HEX1[7];
+	output	HEX2[7];
+	output	HEX3[7];
+	output	HEX4[7];
+	output	HEX5[7];
+	output	LEDR[10];
+}
+
+module DE0_CV{
+
+	reg clk_count[20]=0;
+	wire div_clk;
+	detect_button detect_i;
+	HEX hex[6];
+	
+	wire button[NUM];
+
+	clk_count++;
+
+	
+	GPIO_1_11 = KEY[0];
+	GPIO_0_11 = KEY[0];
+
+	any{
+		SW[3:0] == 4'h0:	div_clk = clk_count[16];
+		SW[3:0] == 4'h1:	div_clk = clk_count[15];
+		SW[3:0] == 4'h2:	div_clk = clk_count[14];
+		SW[3:0] == 4'h3:	div_clk = clk_count[13];
+		else:				div_clk = clk_count[14];
+	}
+
+	detect_i.m_clock = div_clk;
+
+	//button = (SW[9]) ? SW[NUM-1:0] : GPIO_0;
+	if(SW[9]){
+		button = ~({GPIO_1[9],GPIO_1[7],GPIO_1[5],GPIO_1[3],GPIO_1[1]});
+		//button = SW[NUM-1:0];
+	}else{
+		button = ~({GPIO_0[9],GPIO_0[7],GPIO_0[5],GPIO_0[3],GPIO_0[1]});
+	}
+
+	if(~KEY[1]){
+		detect_i.reset();
+	}
+
+	detect_i.BT = button;
+
+	LEDR = button;
+
+	HEX0 = hex[0].input_data(4'(detect_i.RANK_OUT[4:0])).o;
+	HEX1 = hex[1].input_data(4'(detect_i.RANK_OUT[9:5])).o;
+	HEX2 = hex[2].input_data(4'(detect_i.RANK_OUT[14:10])).o;
+	HEX3 = hex[3].input_data(4'(detect_i.RANK_OUT[19:15])).o;
+	HEX4 = hex[4].input_data(4'(detect_i.RANK_OUT[24:20])).o;
+	HEX5 = 7'b1111111; //hex[5].input_data(4'b0).o;
+}

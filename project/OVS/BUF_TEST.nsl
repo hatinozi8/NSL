@@ -1,0 +1,39 @@
+
+#define N 16
+//#define BUF_SIZE 129
+//#define BUF_SIZE 33
+//#define BUF_SIZE 32
+
+
+struct BUF{
+	L[N];
+	R[N];
+};
+
+
+declare BUF_TEST{
+	input Lin[N];
+	input Rin[N];
+	output Lout[N];
+	output Rout[N];
+
+}
+
+
+module BUF_TEST{
+	
+	BUF reg buf_i[BUF_SIZE];
+
+	integer i;
+
+	buf_i[0].R := Rin;
+	buf_i[0].L := Lin;
+
+	Rout = buf_i[BUF_SIZE-1].R;
+	Lout = buf_i[BUF_SIZE-1].L;
+
+	generate( i=1 ; i<BUF_SIZE ; i++ ){
+		buf_i[i] := buf_i[i-1];
+	}
+	
+}

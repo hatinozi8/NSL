@@ -1,0 +1,29 @@
+#include "HEX.inc"
+
+module HEX {
+	reg out[8];
+
+	o=out;
+
+	func input_data {
+		any{
+			i==0x0:	out:=0b11000000;
+			i==0x1:	out:=0b11111001;
+			i==0x2:	out:=0b10100100;
+			i==0x3:	out:=0b10110000;
+			i==0x4:	out:=0b10011001;
+			i==0x5:	out:=0b10010010;
+			i==0x6:	out:=0b10000010;
+			i==0x7:	out:=0b11011000;
+			i==0x8:	out:=0b10000000;
+			i==0x9:	out:=0b10010000;
+			i==0xa:	out:=0b10001000;
+			i==0xb:	out:=0b10000011;
+			i==0xc:	out:=0b11000110;
+			i==0xd:	out:=0b10100001;
+			i==0xe:	out:=0b10000110;
+			i==0xf:	out:=0b10001110;
+		}
+	}
+
+}

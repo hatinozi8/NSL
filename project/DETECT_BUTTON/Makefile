@@ -4,14 +4,14 @@ TOOLTOP		=$(SRCDIR)/../../FPGA_tools
 VPATH		= $(SRCDIR):$(TOOLTOP):
 NSLINC		= -I$(SRCDIR)
 ifndef DESIGN
-DESIGN		= MAX10_FB
+DESIGN		= DE0_CV
 endif
 TARGET		=
 #NSLFLAGS  	= -sim -neg_res $(NSLINC)
 NSLFLAGS  	= -O0 -neg_res $(NSLINC)
 NSLSCFLAGS	= $(NSLFLAGS) -sc_split_header -sc_trace
 VERIOPT		= 
-SRCS		= i2s.nsl
+SRCS		= detect_button.nsl HEX.nsl
 LIBS		=
 
 
@@ -19,7 +19,7 @@ LIBS		=
 # Systemc Env
 #######
 SCLIBS		= 
-SCMOD		= FPGA.h LPF.h
+SCMOD		= 
 #EXTRA_LIBS	=-X11
 
 
