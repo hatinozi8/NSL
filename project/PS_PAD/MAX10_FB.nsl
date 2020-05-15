@@ -1,0 +1,111 @@
+
+#define SLAVE
+
+#ifdef SLAVE
+ #include "PS_PAD_S.inc"
+#else
+ #include "PS_PAD_M.inc"
+#endif
+
+
+declare MAX10_FB{
+#ifdef SLAVE
+	//  14'{ [],x,o,^,R1,L1,R2,L2,LEFT,DOWN,RIGHT,UP,St,Sel }
+	input	GPIO_0[14];
+	output	GPIO_1_0;
+	output	GPIO_1_1;
+	input	GPIO_1_2;
+	input	GPIO_1_3;
+	input	GPIO_1_4;
+	
+#else
+	input	GPIO_0_14;
+	input	GPIO_0_15;
+	input	GPIO_0_16;
+	output	GPIO_0_17;
+	output	GPIO_0_18;
+#endif
+
+
+	output	LED[3];
+
+}
+
+module MAX10_FB{
+
+#ifdef SLAVE
+
+	PS_PAD_S pad_s_i;
+	reg clk_counter[5] = 0;
+
+	clk_counter++;
+	pad_s_i.m_clock = clk_counter[4];
+
+	GPIO_1_0 = pad_s_i.PAD_DAT;
+	GPIO_1_1 = pad_s_i.PAD_ACK;
+	pad_s_i.PAD_CLK = GPIO_1_2;
+	pad_s_i.PAD_CMD = GPIO_1_3;
+	pad_s_i.PAD_SEL = GPIO_1_4;
+
+	//  14'{ [],x,o,^,R1,L1,R2,L2,LEFT,DOWN,RIGHT,UP,St,Sel }
+	pad_s_i.KEY = 16'{GPIO_0[13:1],2'b0,GPIO_0[0]};
+
+	LED = 3'b111;
+
+#else
+
+	PS_PAD_M pad_m_i;
+	reg key_cur[4]; // left, down, right, up
+	reg key_button[10]; // start, select, square, cross, circle, triangle, R1, L1, R2, L2
+
+	// 500khz 
+	reg clk_counter[8] = 0; 
+	reg clk_500k = 0;
+
+	// 16ms (start event)
+	reg st_counter[16] = 0;
+
+	pad_m_i.m_clock = clk_500k;
+	
+	if(SW[9]){	
+		GPIO_0_0 = pad_m_i.PAD_CLK;
+		GPIO_0_1 = pad_m_i.PAD_SEL;
+		GPIO_0_2 = pad_m_i.PAD_CMD;
+		pad_m_i.PAD_ACK = GPIO_0_3;
+		pad_m_i.PAD_DAT = GPIO_0_4;
+	}else{
+		GPIO_0_0 = SW[2];
+		GPIO_0_1 = SW[3];
+		GPIO_0_2 = SW[4];
+	}
+
+	any{
+		SW[1:0]==2'b00: LEDR = key_button;
+		SW[1:0]==2'b01: LEDR = 10'{pad_m_i.PAD_CLK, pad_m_i.PAD_SEL, pad_m_i.PAD_CMD ,key_cur};
+		else: 		 	LEDR = 10'{GPIO_0_3,GPIO_0_4,pad_m_i.debug_state,clk_500k};
+	}
+	
+
+	if(clk_counter == 50){
+		clk_counter:=0;
+		clk_500k := ~clk_500k;
+
+		if(st_counter == 16000){
+			pad_m_i.com_start();
+			st_counter := 0;
+		}else{
+			st_counter++;
+		}	
+	}else{
+		clk_counter++;
+	}
+
+	func pad_m_i.com_end{
+		key_cur := pad_m_i.data[7:4];
+		key_button := {pad_m_i.data[3], pad_m_i.data[0], pad_m_i.data[15:8]};
+	}
+
+#endif
+
+}
+	

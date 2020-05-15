@@ -1,0 +1,169 @@
+
+#include "PS_PAD_S.inc"
+
+// 50Mhz
+//#define ACK_DOWN 2000
+//#define ACK_UP   200
+
+// 50Mhz / 32
+#define ACK_DOWN 64
+#define ACK_UP    5
+
+module PS_PAD_S{
+
+	reg prev_clk = 1;
+	reg prev_sel = 1;
+
+	reg ack_count[20] = 0;
+	reg ack_out = 1;
+
+	reg read_count[3] = 0;
+	reg read_data[8] = 0;
+	reg read_data_debug[8] =0;
+
+	reg write_count[3] = 0;
+	reg write_data[8] = 0;
+	reg write_data_buf = 0;
+
+	reg key_data[16];
+
+	wire neg_edge;
+	wire pos_edge;
+	wire sel_neg;
+
+	func_self neg;
+	func_self pos;
+	func_self ack;
+
+	wire cmd[8];
+	func_self decode(cmd);
+
+	proc_name ready(), read_cmd(), write_id(), write_Z(), write_key1(), write_key2();
+
+
+	/* ------------------------- */
+	
+	// Output
+	debug = 16'{decode,write_key2,write_key1,write_Z,read_cmd,ready,read_data_debug};
+	PAD_DAT = write_data_buf;
+	PAD_ACK = ack_out;
+
+	/* ------------------------- */
+
+	prev_clk := PAD_CLK;
+	prev_sel := PAD_SEL;
+	
+	neg_edge  = prev_clk  & ~PAD_CLK;
+	pos_edge  = ~prev_clk  & PAD_CLK;
+
+	sel_neg = prev_sel & ~PAD_SEL;
+	if(sel_neg) decode(0);
+	
+	if( ~PAD_SEL ){
+		if(neg_edge) neg();
+		if(pos_edge) pos();
+	}else{
+		read_cmd.finish();
+		write_id.finish();
+		write_Z.finish();
+		write_key1.finish();
+		write_key2.finish();
+		ready();
+	}
+
+	func neg{
+		write_data_buf := write_data[0];
+		write_data := write_data >> 1;
+	}
+
+	func pos{
+		wire tmp_data[8];
+		tmp_data = {PAD_CMD,read_data[7:1]};
+		if( read_count < 7 ){
+			read_data := tmp_data;
+		}else{
+			decode(tmp_data);
+		}
+		read_count++;
+	}
+
+	func ack seq{
+		for(ack_count := 0, ACK_UP){
+			ack_out := 1;
+		}
+		for(ack_count := 0, ACK_DOWN){
+			ack_out := 0;
+		}
+		ack_out := 1;
+	}
+
+	proc ready{
+		if(sel_neg){
+			read_cmd();
+			read_count := 0;
+			write_count := 0;
+			write_data := 0xFF;
+		}
+	}
+
+	proc read_cmd{
+		if(decode){
+			if(cmd == 0x01){
+				write_data := 0x41;
+				key_data := ~KEY;
+				ack();
+				write_id();
+			}else{
+				ready();
+			}
+		}
+	}
+
+	proc write_id{
+		if(decode){
+			read_data_debug := cmd;
+			if(cmd == 0x42){
+				write_data := 0x5a;
+				ack();
+				write_Z();
+			}else{
+				ready();
+			}
+		}
+	}
+
+	proc write_Z{
+		if(decode){
+			if(cmd == 0x00 | 1'b1){
+				write_data := key_data[7:0];
+				ack();
+				write_key1();
+			}else{
+				ready();
+			}
+		}
+	}
+
+	proc write_key1{
+		if(decode){
+			if(cmd == 0x00 | 1'b1){
+				write_data := key_data[15:8];
+				ack();
+				write_key2();
+			}else{
+				ready();
+			}
+		}
+	}
+
+	proc write_key2{
+		if(decode){
+			ack();
+			ready();
+		}
+	}
+
+	
+
+}
+

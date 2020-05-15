@@ -1,0 +1,109 @@
+#include "PS_PAD_M.inc"
+
+#define N 5
+
+struct ID{
+	id[4];
+	len[4];
+};
+
+module PS_PAD_M{
+	
+	reg o_clk = 1;
+	reg o_cmd = 1;
+
+	reg d_key[16] = 0;
+	ID 	reg	d_id = 0;
+	
+	reg w_data[8] = 0;
+	reg r_data[8] = 0;
+	reg bit_cnt[3]  = 0;
+	reg data_cnt[8] = 0;
+	reg wait_cnt[3] = 0;
+	
+	proc_name IDLE();
+	proc_name NEXT(data_cnt);
+	proc_name WRITE(w_data);
+	proc_name READ();
+	proc_name DECODE();
+	proc_name WAIT();
+
+	if(~(IDLE|NEXT|WRITE|READ|DECODE|WAIT)) IDLE();
+
+	{ // output
+		if(~IDLE)	PAD_SEL = 0;
+		else		PAD_SEL = 1;
+	
+		if(NEXT|WRITE|READ){
+			o_clk := ~o_clk;
+			PAD_CLK = o_clk;
+			PAD_CMD = w_data[bit_cnt]; //o_cmd;
+		}
+		else{
+			o_clk := 1;
+			PAD_CLK = 1;
+			PAD_CMD = 1;
+		}
+
+		data = d_key;
+		id = d_id.id;
+	}
+
+	{ // debug
+		debug_state = {IDLE, NEXT, WRITE, READ, DECODE, WAIT};
+	}
+
+	proc IDLE{
+		if(com_start) NEXT(0);
+	}
+
+	proc NEXT{
+		bit_cnt := 0;
+		any{
+			data_cnt == 0: w_data := 1;
+			data_cnt == 1: w_data := 0x42;
+			data_cnt >= 2: w_data := 0;
+		}
+		WRITE();
+	}
+
+	proc WRITE{
+		//o_cmd := w_data[bit_cnt];
+		READ();
+	}
+
+	proc READ{
+		r_data := {PAD_DAT, r_data[7:1]};
+		bit_cnt++;
+		if (bit_cnt == 3'b111) 	DECODE();
+		else					WRITE();
+	}
+
+	proc DECODE{
+		any{
+			data_cnt==1:	d_id := r_data;
+			data_cnt==3:	d_key := {8'b0,r_data};
+			data_cnt==4:	d_key := {r_data,d_key[7:0]};
+		}
+		WAIT();
+	}
+
+	proc WAIT{ //wait for ack or Nclk
+		wire data_len[8];
+		if(wait_cnt==N){
+			wait_cnt := 0;
+			data_len = {(d_id.len),1'b0}+2;
+			if(data_cnt < data_len){
+				NEXT(data_cnt+1);
+			}
+			else{
+				com_end();
+				IDLE();
+			}
+		}
+		else{
+			wait_cnt++;
+		}
+	}
+
+}

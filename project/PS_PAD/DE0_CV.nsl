@@ -1,0 +1,131 @@
+
+#define SLAVE
+
+#ifdef SLAVE
+ #include "PS_PAD_S.inc"
+#else
+ #include "PS_PAD_M.inc"
+#endif
+
+
+#include "HEX.inc"
+
+declare DE0_CV{
+#ifdef SLAVE
+	//  14'{ [],x,o,^,R1,L1,R2,L2,LEFT,DOWN,RIGHT,UP,St,Sel }
+	input	GPIO_0[14:0];
+	input	GPIO_0_15;
+	input	GPIO_0_16;
+	input	GPIO_0_17;
+	output	GPIO_0_18;
+	output	GPIO_0_19;
+	
+#else
+	input	GPIO_0_15;
+	input	GPIO_0_16;
+	input	GPIO_0_17;
+	output	GPIO_0_18;
+	output	GPIO_0_19;
+#endif
+
+
+	input	KEY[4];
+	input 	SW[10];
+	output	HEX0[7];
+	output	HEX1[7];
+	output	LEDR[10];
+
+}
+
+module DE0_CV{
+
+#ifdef SLAVE
+
+	PS_PAD_S pad_s_i;
+	HEX hex0_i, hex1_i;
+	reg clk_counter[5] = 0;
+
+	clk_counter++;
+	pad_s_i.m_clock = clk_counter[4];
+
+
+	pad_s_i.PAD_SEL = GPIO_0_15;
+	pad_s_i.PAD_CMD = GPIO_0_16;
+	pad_s_i.PAD_CLK = GPIO_0_17;
+	GPIO_0_18 = pad_s_i.PAD_DAT;
+	GPIO_0_19 = pad_s_i.PAD_ACK;
+
+	pad_s_i.KEY = 16'GPIO_0;
+
+	/* debug */
+	// pad_s_i.KEY = 16'{SW[7:0],~KEY,SW[8],3'b0};
+	HEX0 = hex0_i.o;
+	HEX1 = hex1_i.o;
+	if(KEY[3]){
+		hex0_i.input_data(pad_s_i.debug[3:0]);
+		hex1_i.input_data(pad_s_i.debug[7:4]);
+	}
+
+	any{
+		SW[9] == 1'b1: LEDR = 10'{GPIO_0_15, GPIO_0_16, GPIO_0_17, pad_s_i.PAD_DAT, pad_s_i.PAD_ACK};
+		SW[9] == 1'b0: LEDR = pad_s_i.debug[15:8];
+	}
+
+
+#else
+
+	PS_PAD_M pad_m_i;
+	reg key_cur[4]; // left, down, right, up
+	reg key_button[10]; // start, select, square, cross, circle, triangle, R1, L1, R2, L2
+
+	// 500khz 
+	reg clk_counter[8] = 0; 
+	reg clk_500k = 0;
+
+	// 16ms (start event)
+	reg st_counter[16] = 0;
+
+	pad_m_i.m_clock = clk_500k;
+	
+	if(SW[9]){	
+		GPIO_0_0 = pad_m_i.PAD_CLK;
+		GPIO_0_1 = pad_m_i.PAD_SEL;
+		GPIO_0_2 = pad_m_i.PAD_CMD;
+		pad_m_i.PAD_ACK = GPIO_0_3;
+		pad_m_i.PAD_DAT = GPIO_0_4;
+	}else{
+		GPIO_0_0 = SW[2];
+		GPIO_0_1 = SW[3];
+		GPIO_0_2 = SW[4];
+	}
+
+	any{
+		SW[1:0]==2'b00: LEDR = key_button;
+		SW[1:0]==2'b01: LEDR = 10'{pad_m_i.PAD_CLK, pad_m_i.PAD_SEL, pad_m_i.PAD_CMD ,key_cur};
+		else: 		 	LEDR = 10'{GPIO_0_3,GPIO_0_4,pad_m_i.debug_state,clk_500k};
+	}
+	
+
+	if(clk_counter == 50){
+		clk_counter:=0;
+		clk_500k := ~clk_500k;
+
+		if(st_counter == 16000){
+			pad_m_i.com_start();
+			st_counter := 0;
+		}else{
+			st_counter++;
+		}	
+	}else{
+		clk_counter++;
+	}
+
+	func pad_m_i.com_end{
+		key_cur := pad_m_i.data[7:4];
+		key_button := {pad_m_i.data[3], pad_m_i.data[0], pad_m_i.data[15:8]};
+	}
+
+#endif
+
+}
+	

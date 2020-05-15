@@ -1,0 +1,61 @@
+#include "PS_PAD_M.inc"
+
+#include "PS_PAD_S.inc"
+
+declare PS_PAD_sim simulation {}
+
+module PS_PAD_sim{
+	PS_PAD_M pad_i;
+	PS_PAD_S pad_c_i;
+
+	reg pc[30] =0;
+
+	reg prev_clk = 1;
+	reg count[3] = 0;
+
+
+
+	mem data_list[5][8] = {
+		8'h00,
+		8'h41,
+		8'h5a,
+		8'hff,
+		8'h00};
+	reg pad_data;
+
+	pad_i.m_clock = pc[2];
+	prev_clk := pad_i.PAD_CLK;	
+
+	pc++;
+
+	pad_c_i.PAD_SEL = pad_i.PAD_SEL;
+	pad_c_i.PAD_CMD = pad_i.PAD_CMD;
+	pad_c_i.PAD_CLK = pad_i.PAD_CLK;
+	pad_i.PAD_DAT = pad_c_i.PAD_DAT;
+	pad_i.PAD_ACK = pad_c_i.PAD_ACK;
+
+	pad_c_i.KEY = 0xff00;
+
+	if(pc >= 0x1B && pc < 0x1F){
+		pad_i.com_start();
+	}
+
+	func pad_i.com_end{
+		_finish("");
+	}
+
+	if(pc == 1000000) _finish("pc1000000");
+/*
+	if(prev_clk & ~pad_i.PAD_CLK){
+		pad_data := data_list[1][count];
+		pad_i.PAD_DAT = data_list[1][count];
+		count++;
+	}else{
+		pad_i.PAD_DAT=pad_data;
+	}
+*/
+		
+		
+
+
+}
